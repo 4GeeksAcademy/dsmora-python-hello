@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from app.adapters import PostgreSQLDummyRepository
 from app.api.routes import register_routes
+from app.models.repository import PostgreSQLDummyRepository
 
 
 def create_app(repository: PostgreSQLDummyRepository | None = None) -> FastAPI:

@@ -1,10 +1,9 @@
 from typing import List, Optional
 
-from app.domain.models import ShoppingItem, ShoppingItemCreate, ShoppingItemUpdate
-from app.domain.ports import ShoppingRepository
+from app.models.shopping_item import ShoppingItem, ShoppingItemCreate, ShoppingItemUpdate
 
 
-class PostgreSQLDummyRepository(ShoppingRepository):
+class PostgreSQLDummyRepository:
     def __init__(self):
         self._items: List[ShoppingItem] = [
             ShoppingItem(id=1, name="Pan", quantity=2, completed=False),

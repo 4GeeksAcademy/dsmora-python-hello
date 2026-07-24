@@ -3,7 +3,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 from app.api import create_app
-from app.adapters import PostgreSQLDummyRepository
+from app.models.repository import PostgreSQLDummyRepository
 
 
 class ShoppingListAPITests(unittest.TestCase):
