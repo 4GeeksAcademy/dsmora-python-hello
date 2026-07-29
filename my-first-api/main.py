@@ -86,7 +86,7 @@ def health():
 @app.get("/contacts", response_model=list[ContactResponse])
 def get_contacts(name: str | None = None, tlf: str | None = None, contact_id: int | None = None):
 	results = contacts
-
+	## Hola 
 	if contact_id is not None:
 		results = [c for c in results if c["id"] == contact_id]
 	if name is not None:
