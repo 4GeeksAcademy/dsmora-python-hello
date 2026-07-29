@@ -1,1 +1,3 @@
-.env 
+.env
+.pytest_cache/
+my-first-api/.venv/
