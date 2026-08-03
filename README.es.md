@@ -1,23 +1,111 @@
-# Python Hello
+# API de Librería
 
-El boilerplate más básico para comenzar un proyecto en Python en 4Geeks. Inicia tu primer proyecto en Python desde cero.
+API pequeña para gestionar libros, construida con FastAPI, TinyDB y Pydantic, usando una estructura MVC ligera.
 
-## ¿Qué hacer a continuación?
+## Stack
 
-Abre el archivo `main.py` y comienza a escribir tu código.
+- FastAPI
+- TinyDB
+- Pydantic
 
-Ejecuta tu código escribiendo el siguiente comando en tu terminal:
+No se declaran más dependencias directas del proyecto.
 
-```bash
-$ python main.py
+## Estructura
+
+```text
+app/
+	controllers/
+	models/
+	repositories/
+	services/
+	views/
+data/
+main.py
+seed.py
+requirements.txt
 ```
 
-Puedes crear e incluir tantos archivos de Python (también conocidos como módulos) como desees utilizando las declaraciones de importación.
+## Instalación
 
-## Requisitos
+```bash
+pip install -r requirements.txt
+```
 
-Asegúrate de tener Python instalado en tu computadora. Te recomendamos encarecidamente [instalar Python a través de Pyenv](https://4geeks.com/es/how-to/que-es-pyenv-y-como-instalar-pyenv) para evitar conflictos de versiones en el futuro.
+## Seed de prueba
 
-### Contribuidores
+```bash
+python seed.py
+```
 
-Esta plantilla fue creada como parte de los [Recursos de Python de 4Geeks](https://4geeks.com/es/technology/python) para el aprendizaje en [4Geeks.com](https://4geeks.com) por [Alejandro Sanchez](https://twitter.com/alesanchezr) y [muchos otros contribuyentes](https://github.com/4GeeksAcademy/python-hello/graphs/contributors).
+Si ejecutas el seed más de una vez, no duplicará los libros iniciales.
+
+## Ejecutar la API
+
+```bash
+python main.py
+```
+
+Esto levanta la API con Uvicorn en el puerto 8000.
+
+## Endpoints
+
+### Crear un libro
+
+```http
+POST /books
+```
+
+Cuerpo:
+
+```json
+{
+	"title": "Dune",
+	"author": "Frank Herbert",
+	"genre": "sci-fi",
+	"pages": 412,
+	"status": "available"
+}
+```
+
+### Listar libros
+
+```http
+GET /books
+GET /books?genre=sci-fi
+GET /books?status=available
+GET /books?genre=sci-fi&status=available
+```
+
+### Obtener un libro por id
+
+```http
+GET /books/{id}
+```
+
+### Actualizar estado
+
+```http
+PATCH /books/{id}/status
+```
+
+Cuerpo:
+
+```json
+{
+	"status": "checked_out"
+}
+```
+
+### Eliminar un libro
+
+```http
+DELETE /books/{id}
+```
+
+## Reglas de validación
+
+- `title`: string obligatorio
+- `author`: string obligatorio
+- `genre`: `fiction`, `non-fiction`, `mystery`, `sci-fi`
+- `pages`: entero mayor que 0
+- `status`: `available`, `checked_out`

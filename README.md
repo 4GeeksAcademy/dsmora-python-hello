@@ -1,23 +1,111 @@
-# Python Hello
+# Library API
 
-The most basic boilerplate to start a Python project at 4Geeks is to start your very first Python project from scratch.
+Small library management API built with FastAPI, TinyDB and Pydantic using a lightweight MVC structure.
 
-## What to do next?
+## Stack
 
-Open the `main.py` file and start writing your code.
+- FastAPI
+- TinyDB
+- Pydantic
 
-Execute your code by typing the following command on your terminal:
+No other direct project dependencies are declared.
 
-```bash
-$ python main.py
+## Project Structure
+
+```text
+app/
+	controllers/
+	models/
+	repositories/
+	services/
+	views/
+data/
+main.py
+seed.py
+requirements.txt
 ```
 
-You can create and include as many python files (a.k.a. modules) as you want using the import statements.
+## Install
 
-## Requirements
+```bash
+pip install -r requirements.txt
+```
 
-Make sure you have Python installed in your computer. We strongly recommend [installing Python through Pyenv ](https://4geeks.com/how-to/what-is-pyenv-and-how-to-install-pyenv) to avoid version conflicts in the future.
+## Seed Test Data
 
-### Contributors
+```bash
+python seed.py
+```
 
-This template was built as part of the [4Geeks Python Resources](https://4geeks.com/technology/python) for learning at [4Geeks.com](https://4geeks.com) by [Alejandro Sanchez](https://twitter.com/alesanchezr) and [many other contributors](https://github.com/4GeeksAcademy/python-hello/graphs/contributors).
+Running the seed multiple times does not duplicate the initial books.
+
+## Run The API
+
+```bash
+python main.py
+```
+
+This starts the API with Uvicorn on port 8000.
+
+## Endpoints
+
+### Create a book
+
+```http
+POST /books
+```
+
+Body:
+
+```json
+{
+	"title": "Dune",
+	"author": "Frank Herbert",
+	"genre": "sci-fi",
+	"pages": 412,
+	"status": "available"
+}
+```
+
+### List books
+
+```http
+GET /books
+GET /books?genre=sci-fi
+GET /books?status=available
+GET /books?genre=sci-fi&status=available
+```
+
+### Get one book
+
+```http
+GET /books/{id}
+```
+
+### Update status
+
+```http
+PATCH /books/{id}/status
+```
+
+Body:
+
+```json
+{
+	"status": "checked_out"
+}
+```
+
+### Delete a book
+
+```http
+DELETE /books/{id}
+```
+
+## Validation Rules
+
+- `title`: required string
+- `author`: required string
+- `genre`: `fiction`, `non-fiction`, `mystery`, `sci-fi`
+- `pages`: integer greater than 0
+- `status`: `available`, `checked_out`
