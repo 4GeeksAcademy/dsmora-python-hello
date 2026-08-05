@@ -1,5 +1,7 @@
 from app.models.book import BookCreate, BookGenre, BookResponse, BookStatus
+from app.models.reserved_book import ReservationStatus, ReservedBookModel
 from app.repositories.books_repository import BooksRepository
+from app.repositories.reserved_books_repository import ReservedBooksRepository
 
 
 class BookNotFoundError(Exception):
@@ -7,8 +9,13 @@ class BookNotFoundError(Exception):
 
 
 class BooksService:
-    def __init__(self, repository: BooksRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: BooksRepository | None = None,
+        reserved_books_repository: ReservedBooksRepository | None = None,
+    ) -> None:
         self.repository = repository or BooksRepository()
+        self.reserved_books_repository = reserved_books_repository or ReservedBooksRepository()
 
     def create_book(self, book: BookCreate) -> BookResponse:
         return self.repository.create(book)
@@ -26,10 +33,23 @@ class BooksService:
             raise BookNotFoundError()
         return book
 
-    def update_book_status(self, book_id: int, status: BookStatus) -> BookResponse:
+    def update_book_status(self, book_id: int, status: BookStatus, user_id: str) -> BookResponse:
         book = self.repository.update_status(book_id, status)
         if book is None:
             raise BookNotFoundError()
+
+        reservation_status = (
+            ReservationStatus.reserved
+            if status == BookStatus.checked_out
+            else ReservationStatus.cancelled
+        )
+        self.reserved_books_repository.create(
+            ReservedBookModel(
+                user_id=user_id,
+                book_id=book_id,
+                status=reservation_status,
+            )
+        )
         return book
 
     def delete_book(self, book_id: int) -> None:

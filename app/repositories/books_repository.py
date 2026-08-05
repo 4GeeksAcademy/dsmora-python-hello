@@ -11,7 +11,7 @@ class BooksRepository:
         self.table = get_db().table("books")
 
     def create(self, book: BookCreate) -> BookResponse:
-        payload = book.model_dump() if hasattr(book, "model_dump") else book.dict()
+        payload = book.model_dump(mode="json") if hasattr(book, "model_dump") else book.dict()
         doc_id = self.table.insert(payload)
         return BookResponse(id=doc_id, **payload)
 

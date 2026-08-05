@@ -22,19 +22,22 @@ app/
 data/
 main.py
 seed.py
-requirements.txt
+pyproject.toml
+uv.lock
 ```
 
 ## Install
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
+
+This project uses `uv` for dependency management. Do not use `pip install` or `pipenv`.
 
 ## Seed Test Data
 
 ```bash
-python seed.py
+uv run python seed.py
 ```
 
 Running the seed multiple times does not duplicate the initial books.
@@ -42,7 +45,7 @@ Running the seed multiple times does not duplicate the initial books.
 ## Run The API
 
 ```bash
-python main.py
+uv run python main.py
 ```
 
 This starts the API with Uvicorn on port 8000.
