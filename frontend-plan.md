@@ -273,3 +273,21 @@ CAU5. Usuario con token expirado/inválido (401) en endpoint privado
 - El backend actual de registro no expone role en el payload de creación de usuario. Para cumplir este requisito, hay que extender el endpoint de registro para aceptar role de forma explícita y segura.
 - El endpoint /auth/me devuelve email + profile; para UI basada en rol, el frontend tomará el role del JWT o se añadirá role al response de /auth/me.
 
+
+model User 
+{
+    name: string,
+    age: number,
+    address: string
+}
+Actualizar
+PUT /user/{id}
+{
+    name: string,
+    age: number,
+    address: string
+}
+PATCH /user/{id}
+{
+    age: number,
+}
