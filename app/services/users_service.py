@@ -29,6 +29,7 @@ class UsersService:
         user = UserModel(
             email=payload.email,
             hashed_password=get_password_hash(payload.password),
+            role=payload.role,
         )
         created_user = self.users_repository.create(user)
 

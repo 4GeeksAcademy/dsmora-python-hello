@@ -36,4 +36,8 @@ class AuthService:
         if profile is None:
             raise AuthProfileNotFoundError()
 
-        return AuthMeResponse(email=current_user.email, profile=ProfileResponse(**profile.model_dump()))
+        return AuthMeResponse(
+            email=current_user.email,
+            role=current_user.role,
+            profile=ProfileResponse(**profile.model_dump()),
+        )

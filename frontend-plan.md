@@ -191,15 +191,85 @@ export interface BookFilters {
 | 11 | Implementar página Detalle (`pages/books/[id].tsx`) |
 | 12 | Ajustes responsive finales y pruebas |
 
----
-
+--------
 FASE 2
 Autenticación 
 --------
 
-## Formulario de registro. 
-## Formulario de login 
-### elegir donde guardar el token 
-Elegido localStorage 
+## Objetivo
+Implementar autenticación completa con control de acceso por rol y consumo de endpoints privados.
 
-CAU1. Usuario sin token en pagina privada 
+## Decisiones cerradas
+- Persistencia del token: localStorage.
+- Ruta tras login exitoso: perfil (/profile).
+- Reserva de libro: usar PATCH /books/{id}/status con status=checked_out.
+- Manejo global de 401 en rutas privadas: limpiar token y redirigir a /login.
+- Roles disponibles en registro (UI): user, manager y admin.
+
+## Funcionalidad a implementar
+### 1) Registro
+- Crear formulario de registro con: email, password, name, phone, address y role.
+- Validaciones mínimas de cliente:
+  - email válido
+  - password con mínimo 8 caracteres
+  - campos de perfil no vacíos
+
+### 2) Login
+- Crear formulario de login con email y password.
+- En respuesta 200:
+  - guardar access_token en localStorage
+  - redirigir a /profile
+
+### 3) Sesión y autorización
+- Implementar logout cliente:
+  - eliminar token de localStorage
+  - redirigir a /
+- Crear guard de rutas privadas (por ejemplo /profile, /reservations, /admin/books/new):
+  - sin token: redirigir a /login y limpiar localStorage
+  - con 401 del backend: redirigir a /login y limpiar localStorage
+- Crear guard por rol para rutas de administrador/manager:
+  - si backend responde 403: redirigir a /
+  - no limpiar token en caso de 403
+
+### 4) Página de perfil
+- Crear /profile como pantalla privada.
+- Mostrar datos del usuario autenticado (email + perfil) y acciones básicas de sesión.
+
+### 5) Endpoints privados de libros
+- Crear libro (solo admin/manager): POST /books.
+- Reservar libro (usuario autenticado): PATCH /books/{id}/status con status=checked_out.
+- Listado de reservas del usuario: GET /books/reserved.
+
+### 6) Vistas por rol
+- Vista user:
+  - reservar libros
+  - ver sus reservas
+- Vista admin/manager:
+  - crear libro
+  - acceso a secciones de gestión (y futura extensión para editar/eliminar)
+
+## Casos de uso (CAU)
+CAU1. Usuario sin token en página privada
+    Redirigir a /login
+    Limpiar localStorage
+
+CAU2. Login exitoso (200)
+    Guardar token
+    Redirigir a /profile
+
+CAU3. Usuario cierra sesión
+    Limpiar localStorage
+    Redirigir a /
+
+CAU4. Usuario con token válido pero rol incorrecto (403)
+    Redirigir a /
+    No limpiar token
+
+CAU5. Usuario con token expirado/inválido (401) en endpoint privado
+    Limpiar localStorage
+    Redirigir a /login
+
+## Flecos detectados a resolver
+- El backend actual de registro no expone role en el payload de creación de usuario. Para cumplir este requisito, hay que extender el endpoint de registro para aceptar role de forma explícita y segura.
+- El endpoint /auth/me devuelve email + profile; para UI basada en rol, el frontend tomará el role del JWT o se añadirá role al response de /auth/me.
+

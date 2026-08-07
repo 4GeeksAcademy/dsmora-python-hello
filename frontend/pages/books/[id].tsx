@@ -5,12 +5,54 @@ import BookDetail from '@/components/BookDetail';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import { useBook } from '@/hooks/useBook';
+import { clearToken, getToken } from '@/lib/auth';
+import { ApiError, fetchApi } from '@/lib/api';
+import { useState } from 'react';
 
 export default function BookPage() {
   const router = useRouter();
   const { id } = router.query;
   const bookId = id ? parseInt(id as string, 10) : null;
   const { book, isLoading, error, refetch } = useBook(bookId);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isReserving, setIsReserving] = useState(false);
+
+  const handleReserve = async () => {
+    if (!bookId) return;
+
+    const token = getToken();
+    if (!token) {
+      clearToken();
+      router.push('/login');
+      return;
+    }
+
+    setActionError(null);
+    setIsReserving(true);
+
+    try {
+      await fetchApi(`/books/${bookId}/status`, {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify({ status: 'checked_out' }),
+      });
+      refetch();
+      router.push('/reservations');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearToken();
+        router.push('/login');
+        return;
+      }
+      if (err instanceof ApiError && err.status === 403) {
+        router.push('/');
+        return;
+      }
+      setActionError(err instanceof Error ? err.message : 'No se pudo reservar el libro');
+    } finally {
+      setIsReserving(false);
+    }
+  };
 
   return (
     <Layout>
@@ -41,7 +83,24 @@ export default function BookPage() {
 
       {error && <ErrorMessage message={error} onRetry={refetch} />}
 
-      {!isLoading && !error && book && <BookDetail book={book} />}
+      {!isLoading && !error && book && (
+        <div className="space-y-4">
+          <BookDetail book={book} />
+
+          {book.status === 'available' && (
+            <div className="max-w-2xl mx-auto flex flex-col items-start gap-3">
+              <button
+                onClick={handleReserve}
+                disabled={isReserving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                {isReserving ? 'Reservando...' : 'Reservar libro'}
+              </button>
+              {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+            </div>
+          )}
+        </div>
+      )}
     </Layout>
   );
 }
