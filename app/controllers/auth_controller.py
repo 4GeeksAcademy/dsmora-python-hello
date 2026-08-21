@@ -1,6 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from app.dependencies.auth import get_current_user, require_roles
 from app.models.auth import AuthAuthorizeResponse, AuthMeResponse, LoginRequest, TokenResponse
@@ -15,11 +17,32 @@ service = AuthService()
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest) -> TokenResponse:
+async def login(request: Request) -> TokenResponse:
     try:
+        payload = await _parse_login_request(request)
         return service.login(payload)
     except InvalidCredentialsError as error:
         raise unauthorized_exception() from error
+
+
+async def _parse_login_request(request: Request) -> LoginRequest:
+    content_type = request.headers.get("content-type", "")
+
+    if "application/json" in content_type:
+        raw_payload = await request.json()
+    elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+        form_data = await request.form()
+        raw_payload = {
+            "email": form_data.get("username", ""),
+            "password": form_data.get("password", ""),
+        }
+    else:
+        raw_payload = await request.json()
+
+    try:
+        return LoginRequest.model_validate(raw_payload)
+    except ValidationError as error:
+        raise RequestValidationError(error.errors()) from error
 
 
 @router.get("/me", response_model=AuthMeResponse)
