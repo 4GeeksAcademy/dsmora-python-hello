@@ -1,0 +1,33 @@
+# ---- STAGE 1: BUILDER ----
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --no-dev --frozen
+
+# ---- STAGE 2: IMAGEN FINAL ----
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Instalar curl para el healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 appuser \
+    && adduser --system --uid 1001 --gid 1001 appuser
+
+COPY --chown=appuser:appuser --from=builder /app/.venv /app/.venv
+COPY --chown=appuser:appuser . .
+
+EXPOSE 8000
+
+USER appuser
+
+CMD ["/app/.venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
