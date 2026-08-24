@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { BookFilters as BookFiltersType, BookGenre, BookStatus } from '@/types/book';
 
 interface BookFiltersProps {
@@ -8,7 +9,7 @@ interface BookFiltersProps {
 const genres: BookGenre[] = ['fiction', 'non-fiction', 'mystery', 'sci-fi'];
 const statuses: BookStatus[] = ['available', 'checked_out'];
 
-export default function BookFilters({ filters, onFilterChange }: BookFiltersProps) {
+function BookFilters({ filters, onFilterChange }: BookFiltersProps) {
   const handleGenreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value as BookGenre | '';
     onFilterChange({
@@ -84,3 +85,5 @@ export default function BookFilters({ filters, onFilterChange }: BookFiltersProp
     </div>
   );
 }
+
+export default memo(BookFilters);

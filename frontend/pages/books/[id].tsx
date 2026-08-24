@@ -1,13 +1,14 @@
+import { useState, Suspense, lazy } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
-import BookDetail from '@/components/BookDetail';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import ErrorMessage from '@/components/ErrorMessage';
 import { useBook } from '@/hooks/useBook';
 import { clearToken, getToken } from '@/lib/auth';
 import { ApiError, fetchApi } from '@/lib/api';
-import { useState } from 'react';
+
+const BookDetail = lazy(() => import('@/components/BookDetail'));
+const ErrorMessage = lazy(() => import('@/components/ErrorMessage'));
 
 export default function BookPage() {
   const router = useRouter();
@@ -81,11 +82,17 @@ export default function BookPage() {
 
       {isLoading && <LoadingSpinner />}
 
-      {error && <ErrorMessage message={error} onRetry={refetch} />}
+      {error && (
+        <Suspense fallback={null}>
+          <ErrorMessage message={error} onRetry={refetch} />
+        </Suspense>
+      )}
 
       {!isLoading && !error && book && (
         <div className="space-y-4">
-          <BookDetail book={book} />
+          <Suspense fallback={<LoadingSpinner />}>
+            <BookDetail book={book} />
+          </Suspense>
 
           {book.status === 'available' && (
             <div className="max-w-2xl mx-auto flex flex-col items-start gap-3">

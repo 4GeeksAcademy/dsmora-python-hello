@@ -1,9 +1,11 @@
+import { memo } from 'react';
+
 interface ErrorMessageProps {
   message: string;
   onRetry?: () => void;
 }
 
-export default function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
+function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="text-red-500 mb-4">
@@ -34,3 +36,5 @@ export default function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
     </div>
   );
 }
+
+export default memo(ErrorMessage);

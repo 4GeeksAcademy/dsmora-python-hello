@@ -3,3 +3,11 @@
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Parallax hero */
+.hero-parallax {
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}

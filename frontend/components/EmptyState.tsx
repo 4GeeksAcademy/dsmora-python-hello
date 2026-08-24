@@ -1,8 +1,10 @@
+import { memo } from 'react';
+
 interface EmptyStateProps {
   message?: string;
 }
 
-export default function EmptyState({ message = 'No se encontraron libros' }: EmptyStateProps) {
+function EmptyState({ message = 'No se encontraron libros' }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="text-gray-400 mb-4">
@@ -25,3 +27,5 @@ export default function EmptyState({ message = 'No se encontraron libros' }: Emp
     </div>
   );
 }
+
+export default memo(EmptyState);

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { memo } from 'react';
 import { BookResponse } from '@/types/book';
 
 interface BookCardProps {
@@ -22,7 +23,7 @@ const statusLabels: Record<string, string> = {
   'checked_out': 'Prestado',
 };
 
-export default function BookCard({ book }: BookCardProps) {
+function BookCard({ book }: BookCardProps) {
   return (
     <Link href={`/books/${book.id}`}>
       <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-4 cursor-pointer h-full">
@@ -49,3 +50,5 @@ export default function BookCard({ book }: BookCardProps) {
     </Link>
   );
 }
+
+export default memo(BookCard);

@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import ErrorMessage from '@/components/ErrorMessage';
-import EmptyState from '@/components/EmptyState';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { clearToken } from '@/lib/auth';
 import { ApiError, fetchApi } from '@/lib/api';
 import { ReservedBookResponse } from '@/types/reservation';
+
+const ErrorMessage = lazy(() => import('@/components/ErrorMessage'));
+const EmptyState = lazy(() => import('@/components/EmptyState'));
 
 export default function ReservationsPage() {
   const router = useRouter();
@@ -49,10 +50,16 @@ export default function ReservationsPage() {
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">Mis reservas</h2>
 
       {(isChecking || isLoading) && <LoadingSpinner />}
-      {error && <ErrorMessage message={error} />}
+      {error && (
+        <Suspense fallback={null}>
+          <ErrorMessage message={error} />
+        </Suspense>
+      )}
 
       {!isChecking && !isLoading && !error && reservations.length === 0 && (
-        <EmptyState message="No tienes reservas activas" />
+        <Suspense fallback={null}>
+          <EmptyState message="No tienes reservas activas" />
+        </Suspense>
       )}
 
       {!isChecking && !isLoading && !error && reservations.length > 0 && (

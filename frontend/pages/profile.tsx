@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import Layout from '@/components/Layout';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import ErrorMessage from '@/components/ErrorMessage';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { clearToken } from '@/lib/auth';
 import { ApiError, fetchApi } from '@/lib/api';
 import { AuthMeResponse } from '@/types/auth';
 import { useRouter } from 'next/router';
+
+const ErrorMessage = lazy(() => import('@/components/ErrorMessage'));
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -54,7 +55,9 @@ export default function ProfilePage() {
   if (error) {
     return (
       <Layout>
-        <ErrorMessage message={error} />
+        <Suspense fallback={null}>
+          <ErrorMessage message={error} />
+        </Suspense>
       </Layout>
     );
   }
