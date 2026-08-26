@@ -6,6 +6,7 @@ interface ErrorMessageProps {
 }
 
 function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
+  'use cache';
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="text-red-500 mb-4">

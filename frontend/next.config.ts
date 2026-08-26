@@ -2,7 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-
+  cacheComponents: true,
+  cacheLife: {
+    realtime: {
+      stale: 30,
+      revalidate: 60,
+      expire: 300,
+    },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
   },

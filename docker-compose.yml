@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: app/Dockerfile.backend
     container_name: library-api
     ports:
       - "8000:8000"
@@ -23,7 +23,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: ../Dockerfile.frontend
+      dockerfile: Dockerfile.frontend
     container_name: library-frontend
     ports:
       - "3000:3000"

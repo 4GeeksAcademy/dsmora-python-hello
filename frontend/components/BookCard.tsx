@@ -24,6 +24,7 @@ const statusLabels: Record<string, string> = {
 };
 
 function BookCard({ book }: BookCardProps) {
+  'use cache';
   return (
     <Link href={`/books/${book.id}`}>
       <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-4 cursor-pointer h-full">

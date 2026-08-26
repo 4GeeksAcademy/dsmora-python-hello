@@ -1,5 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://silver-guide-7vgxwxwq9pjg2x49x-8000.app.github.dev';
-
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://refactored-waddle-vgjj45xwvp93wjqp-8000.app.github.dev';
 export class ApiError extends Error {
   status: number;
 
@@ -18,6 +17,7 @@ export async function fetchApi<T>(
   path: string,
   options?: FetchApiOptions
 ): Promise<T> {
+
   const url = `${BASE_URL}${path}`;
   const headers = new Headers(options?.headers);
   headers.set('Content-Type', 'application/json');

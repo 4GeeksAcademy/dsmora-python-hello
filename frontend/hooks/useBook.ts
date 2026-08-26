@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '@/lib/api';
 import { BookResponse } from '@/types/book';
+'use cache';
 
 interface UseBookResult {
   book: BookResponse | null;
