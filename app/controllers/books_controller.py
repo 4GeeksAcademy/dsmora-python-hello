@@ -1,15 +1,21 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi_cache import FastAPICache
 from fastapi_cache.decorator import cache
 
 from app.dependencies.auth import get_current_user, require_roles
-from app.models.book import BookCreate, BookGenre, BookResponse, BookStatus, BookStatusUpdate
+from app.models.book import BookCreate, BookGenre, BookResponse, BookStatus
 from app.models.reserved_book import ReservedBookResponse
 from app.models.user import UserModel
 from app.services.reserved_books_service import ReservedBooksService
-from app.services.books_service import BookNotFoundError, BooksService
+from app.services.books_service import (
+    BookNotFoundError,
+    BooksService,
+    BookUnavailableError,
+    ReservationForbiddenError,
+    ReservationNotFoundError,
+)
 from app.views.books_view import book_not_found_exception
 
 
@@ -38,11 +44,13 @@ def list_books(
     return service.list_books(genre=genre, status=status)
 
 @router.post("/cache/clear")
-async def clear_books_cache() -> dict[str, str]:
+async def clear_books_cache(
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+) -> dict[str, str]:
+    require_roles(current_user, {"admin", "manager"})
     await FastAPICache.clear(namespace="books")
     return {"message": "Books cache cleared successfully"}
 
-# no necesita token 
 @router.get("/reserved", response_model=list[ReservedBookResponse])
 def list_reserved_books(
     current_user: Annotated[UserModel, Depends(get_current_user)],
@@ -58,19 +66,36 @@ def get_book(book_id: int) -> BookResponse:
     except BookNotFoundError as error:
         raise book_not_found_exception() from error
 
-## necesita token | puede o no necesitar un rol especial
-@router.patch("/{book_id}/status", response_model=BookResponse)
-async def update_book_status(
+@router.post("/{book_id}/reserve", response_model=BookResponse)
+async def reserve_book(
     book_id: int,
-    payload: BookStatusUpdate,
     current_user: Annotated[UserModel, Depends(get_current_user)],
 ) -> BookResponse:
     try:
-        updated_book = service.update_book_status(book_id, payload.status, current_user.id)
+        reserved_book = service.reserve_book(book_id, current_user.id)
         await FastAPICache.clear(namespace="books")
-        return updated_book
+        return reserved_book
     except BookNotFoundError as error:
         raise book_not_found_exception() from error
+    except BookUnavailableError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Book is not available") from error
+
+
+@router.delete("/{book_id}/reservation", response_model=BookResponse)
+async def release_book(
+    book_id: int,
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+) -> BookResponse:
+    try:
+        released_book = service.release_book(book_id, current_user.id)
+        await FastAPICache.clear(namespace="books")
+        return released_book
+    except BookNotFoundError as error:
+        raise book_not_found_exception() from error
+    except ReservationNotFoundError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No active reservation found") from error
+    except ReservationForbiddenError as error:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reservation belongs to another user") from error
 
 # necesita token y un rol especial
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

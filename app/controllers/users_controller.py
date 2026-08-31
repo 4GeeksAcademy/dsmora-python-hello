@@ -3,7 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, status
 
 from app.dependencies.auth import get_current_user
+from app.models.auth import TokenResponse
 from app.models.user import UserCredentialsUpdate, UserModel, UserRegisterRequest, UserResponse, UserWithProfileResponse
+from app.security import create_access_token
 from app.services.users_service import UserEmailConflictError, UserNotFoundError, UsersService
 from app.views.auth_view import forbidden_exception
 from app.views.users_view import user_conflict_exception, user_not_found_exception
@@ -13,10 +15,13 @@ router = APIRouter(prefix="/users", tags=["users"])
 service = UsersService()
 
 
-@router.post("", response_model=UserWithProfileResponse, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserRegisterRequest) -> UserWithProfileResponse:
+@router.post("", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def create_user(payload: UserRegisterRequest) -> TokenResponse:
     try:
-        return service.register_user(payload)
+        registration = service.register_user(payload)
+        user = registration.user
+        token = create_access_token({"sub": user.id, "role": user.role.value, "email": user.email})
+        return TokenResponse(access_token=token)
     except UserEmailConflictError as error:
         raise user_conflict_exception() from error
 

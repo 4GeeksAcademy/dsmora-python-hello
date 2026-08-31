@@ -13,7 +13,6 @@ export interface RegisterRequest {
   name: string;
   phone: string;
   address: string;
-  role: UserRole;
 }
 
 export interface TokenResponse {

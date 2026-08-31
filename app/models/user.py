@@ -21,7 +21,6 @@ class UserRegisterRequest(UserCreate):
     name: str = Field(..., min_length=1)
     phone: str = Field(..., min_length=1)
     address: str = Field(..., min_length=1)
-    role: UserRole = UserRole.user
 
 
 class UserCredentialsUpdate(BaseModel):

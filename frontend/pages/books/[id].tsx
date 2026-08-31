@@ -32,10 +32,9 @@ export default function BookPage() {
     setIsReserving(true);
 
     try {
-      await fetchApi(`/books/${bookId}/status`, {
-        method: 'PATCH',
+      await fetchApi(`/books/${bookId}/reserve`, {
+        method: 'POST',
         token,
-        body: JSON.stringify({ status: 'checked_out' }),
       });
       refetch();
       router.push('/reservations');

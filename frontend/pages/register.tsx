@@ -1,10 +1,9 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
+import { setToken } from '@/lib/auth';
 import { fetchApi } from '@/lib/api';
-import { RegisterRequest, UserRole } from '@/types/auth';
-
-const roles: UserRole[] = ['user', 'manager', 'admin'];
+import { RegisterRequest, TokenResponse } from '@/types/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,7 +13,6 @@ export default function RegisterPage() {
     name: '',
     phone: '',
     address: '',
-    role: 'user',
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,11 +23,12 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await fetchApi('/users', {
+      const response = await fetchApi<TokenResponse>('/users', {
         method: 'POST',
         body: JSON.stringify(formData),
       });
-      router.push('/login');
+      setToken(response.access_token);
+      router.push('/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la cuenta');
     } finally {
@@ -88,26 +87,6 @@ export default function RegisterPage() {
             onChange={(event) => setFormData((prev) => ({ ...prev, address: event.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg"
           />
-
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              Rol
-            </label>
-            <select
-              id="role"
-              value={formData.role}
-              onChange={(event) =>
-                setFormData((prev) => ({ ...prev, role: event.target.value as UserRole }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

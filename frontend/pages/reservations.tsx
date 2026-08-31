@@ -15,6 +15,7 @@ export default function ReservationsPage() {
   const { isChecking, token } = useAuthGuard();
   const [reservations, setReservations] = useState<ReservedBookResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [releasingReservationId, setReleasingReservationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,6 +46,29 @@ export default function ReservationsPage() {
     loadReservations();
   }, [isChecking, token, router]);
 
+  const handleRelease = async (reservation: ReservedBookResponse) => {
+    if (!token) return;
+
+    setError(null);
+    setReleasingReservationId(reservation.id);
+    try {
+      await fetchApi(`/books/${reservation.book_id}/reservation`, {
+        method: 'DELETE',
+        token,
+      });
+      setReservations((current) => current.filter(({ id }) => id !== reservation.id));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearToken();
+        router.replace('/login');
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'No se pudo liberar el libro');
+    } finally {
+      setReleasingReservationId(null);
+    }
+  };
+
   return (
     <Layout>
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">Mis reservas</h2>
@@ -73,6 +97,14 @@ export default function ReservationsPage() {
               <p className="text-gray-500 text-sm">
                 Fecha: {new Date(reservation.created_at).toLocaleString()}
               </p>
+              <button
+                type="button"
+                onClick={() => handleRelease(reservation)}
+                disabled={releasingReservationId === reservation.id}
+                className="mt-3 bg-gray-900 text-white px-3 py-2 rounded-lg font-medium hover:bg-gray-700 disabled:bg-gray-400"
+              >
+                {releasingReservationId === reservation.id ? 'Liberando...' : 'Liberar libro'}
+              </button>
             </div>
           ))}
         </div>

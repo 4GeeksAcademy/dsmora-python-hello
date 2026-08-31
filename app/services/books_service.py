@@ -8,6 +8,18 @@ class BookNotFoundError(Exception):
     pass
 
 
+class BookUnavailableError(Exception):
+    pass
+
+
+class ReservationNotFoundError(Exception):
+    pass
+
+
+class ReservationForbiddenError(Exception):
+    pass
+
+
 class BooksService:
     def __init__(
         self,
@@ -33,24 +45,33 @@ class BooksService:
             raise BookNotFoundError()
         return book
 
-    def update_book_status(self, book_id: int, status: BookStatus, user_id: str) -> BookResponse:
-        book = self.repository.update_status(book_id, status)
-        if book is None:
+    def reserve_book(self, book_id: int, user_id: str) -> BookResponse:
+        book = self.get_book(book_id)
+        if book.status != BookStatus.available:
+            raise BookUnavailableError()
+
+        updated_book = self.repository.update_status(book_id, BookStatus.checked_out)
+        if updated_book is None:
             raise BookNotFoundError()
 
-        reservation_status = (
-            ReservationStatus.reserved
-            if status == BookStatus.checked_out
-            else ReservationStatus.cancelled
-        )
         self.reserved_books_repository.create(
-            ReservedBookModel(
-                user_id=user_id,
-                book_id=book_id,
-                status=reservation_status,
-            )
+            ReservedBookModel(user_id=user_id, book_id=book_id)
         )
-        return book
+        return updated_book
+
+    def release_book(self, book_id: int, user_id: str) -> BookResponse:
+        self.get_book(book_id)
+        reservation = self.reserved_books_repository.get_latest_by_book_id(book_id)
+        if reservation is None or reservation.status != ReservationStatus.reserved:
+            raise ReservationNotFoundError()
+        if reservation.user_id != user_id:
+            raise ReservationForbiddenError()
+
+        updated_book = self.repository.update_status(book_id, BookStatus.available)
+        if updated_book is None:
+            raise BookNotFoundError()
+        self.reserved_books_repository.update_status(reservation.id, ReservationStatus.cancelled)
+        return updated_book
 
     def delete_book(self, book_id: int) -> None:
         deleted = self.repository.delete(book_id)

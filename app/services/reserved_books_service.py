@@ -13,7 +13,7 @@ class ReservedBooksService:
         self.books_repository = books_repository or BooksRepository()
 
     def list_reserved_for_user(self, user_id: str) -> list[ReservedBookResponse]:
-        reservations = self.reserved_repository.list_by_user_id(user_id)
+        reservations = self.reserved_repository.list_active_by_user_id(user_id)
         response: list[ReservedBookResponse] = []
 
         for reservation in reservations:

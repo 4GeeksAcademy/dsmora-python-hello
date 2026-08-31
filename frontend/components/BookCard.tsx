@@ -1,9 +1,13 @@
 import Link from 'next/link';
-import { memo } from 'react';
+import { memo, useState } from 'react';
+import { useRouter } from 'next/router';
+import { clearToken, getToken } from '@/lib/auth';
+import { ApiError, fetchApi } from '@/lib/api';
 import { BookResponse } from '@/types/book';
 
 interface BookCardProps {
   book: BookResponse;
+  onReserved: () => void;
 }
 
 const genreColors: Record<string, string> = {
@@ -23,11 +27,40 @@ const statusLabels: Record<string, string> = {
   'checked_out': 'Prestado',
 };
 
-function BookCard({ book }: BookCardProps) {
+function BookCard({ book, onReserved }: BookCardProps) {
   'use cache';
+  const router = useRouter();
+  const [isReserving, setIsReserving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleReserve = async () => {
+    const token = getToken();
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setError(null);
+    setIsReserving(true);
+    try {
+      await fetchApi(`/books/${book.id}/reserve`, { method: 'POST', token });
+      onReserved();
+      router.push('/reservations');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearToken();
+        router.push('/login');
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'No se pudo reservar el libro');
+    } finally {
+      setIsReserving(false);
+    }
+  };
+
   return (
-    <Link href={`/books/${book.id}`}>
-      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-4 cursor-pointer h-full">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 p-4 h-full">
+      <Link href={`/books/${book.id}`} className="block">
         <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
           {book.title}
         </h3>
@@ -47,8 +80,21 @@ function BookCard({ book }: BookCardProps) {
         </div>
 
         <p className="text-sm text-gray-500">{book.pages} páginas</p>
-      </div>
-    </Link>
+      </Link>
+      {book.status === 'available' && (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={handleReserve}
+            disabled={isReserving}
+            className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-300"
+          >
+            {isReserving ? 'Reservando...' : 'Reservar'}
+          </button>
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        </div>
+      )}
+    </div>
   );
 }
 

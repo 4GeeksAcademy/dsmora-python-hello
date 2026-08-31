@@ -1,5 +1,5 @@
 from app.models.profile import ProfileModel, ProfileResponse
-from app.models.user import UserCredentialsUpdate, UserModel, UserRegisterRequest, UserResponse, UserWithProfileResponse
+from app.models.user import UserCredentialsUpdate, UserModel, UserRegisterRequest, UserResponse, UserRole, UserWithProfileResponse
 from app.repositories.profiles_repository import ProfilesRepository
 from app.repositories.users_repository import UsersRepository
 from app.security import get_password_hash
@@ -29,7 +29,7 @@ class UsersService:
         user = UserModel(
             email=payload.email,
             hashed_password=get_password_hash(payload.password),
-            role=payload.role,
+            role=UserRole.user,
         )
         created_user = self.users_repository.create(user)
 
