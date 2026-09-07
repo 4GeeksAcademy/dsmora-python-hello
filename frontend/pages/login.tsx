@@ -1,9 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { getToken, setToken } from '@/lib/auth';
 import { fetchApi, ApiError } from '@/lib/api';
 import { TokenResponse } from '@/types/auth';
+import { track } from '@/lib/telemetry';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,9 +31,11 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       setToken(response.access_token);
+      track('user.logged_in', { email });
       router.push('/profile');
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
+        track('user.login_failed', { email });
         setError('Credenciales inválidas');
       } else {
         setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');

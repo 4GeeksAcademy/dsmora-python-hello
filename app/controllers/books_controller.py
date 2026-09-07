@@ -1,12 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response, status
 from fastapi_cache import FastAPICache
 from fastapi_cache.decorator import cache
 
+from app.config import APP_VERSION, TELEMETRY_ENV
 from app.dependencies.auth import get_current_user, require_roles
 from app.models.book import BookCreate, BookGenre, BookResponse, BookStatus
 from app.models.reserved_book import ReservedBookResponse
+from app.models.telemetry import EventEnvelope
 from app.models.user import UserModel
 from app.services.reserved_books_service import ReservedBooksService
 from app.services.books_service import (
@@ -16,6 +18,7 @@ from app.services.books_service import (
     ReservationForbiddenError,
     ReservationNotFoundError,
 )
+from app.services.telemetry_service import telemetry_service
 from app.views.books_view import book_not_found_exception
 
 
@@ -70,14 +73,35 @@ def get_book(book_id: int) -> BookResponse:
 async def reserve_book(
     book_id: int,
     current_user: Annotated[UserModel, Depends(get_current_user)],
+    background_tasks: BackgroundTasks,
 ) -> BookResponse:
     try:
         reserved_book = service.reserve_book(book_id, current_user.id)
         await FastAPICache.clear(namespace="books")
+        background_tasks.add_task(
+            telemetry_service.track,
+            EventEnvelope(
+                event="book.reserved",
+                user_id=current_user.id,
+                session_id=f"srv_{current_user.id}",
+                context={"book_id": book_id, "role": current_user.role.value},
+                metadata={"source": "backend-api", "environment": TELEMETRY_ENV, "app_version": APP_VERSION},
+            ),
+        )
         return reserved_book
     except BookNotFoundError as error:
         raise book_not_found_exception() from error
     except BookUnavailableError as error:
+        background_tasks.add_task(
+            telemetry_service.track,
+            EventEnvelope(
+                event="book.reservation_failed",
+                user_id=current_user.id,
+                session_id=f"srv_{current_user.id}",
+                context={"book_id": book_id, "role": current_user.role.value, "reason": "unavailable"},
+                metadata={"source": "backend-api", "environment": TELEMETRY_ENV, "app_version": APP_VERSION},
+            ),
+        )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Book is not available") from error
 
 
@@ -85,10 +109,21 @@ async def reserve_book(
 async def release_book(
     book_id: int,
     current_user: Annotated[UserModel, Depends(get_current_user)],
+    background_tasks: BackgroundTasks,
 ) -> BookResponse:
     try:
         released_book = service.release_book(book_id, current_user.id)
         await FastAPICache.clear(namespace="books")
+        background_tasks.add_task(
+            telemetry_service.track,
+            EventEnvelope(
+                event="book.released",
+                user_id=current_user.id,
+                session_id=f"srv_{current_user.id}",
+                context={"book_id": book_id, "role": current_user.role.value},
+                metadata={"source": "backend-api", "environment": TELEMETRY_ENV, "app_version": APP_VERSION},
+            ),
+        )
         return released_book
     except BookNotFoundError as error:
         raise book_not_found_exception() from error

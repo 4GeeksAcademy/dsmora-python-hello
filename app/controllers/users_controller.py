@@ -1,11 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Response, status
 
+from app.config import APP_VERSION, TELEMETRY_ENV
 from app.dependencies.auth import get_current_user
 from app.models.auth import TokenResponse
+from app.models.telemetry import EventEnvelope
 from app.models.user import UserCredentialsUpdate, UserModel, UserRegisterRequest, UserResponse, UserWithProfileResponse
 from app.security import create_access_token
+from app.services.telemetry_service import telemetry_service
 from app.services.users_service import UserEmailConflictError, UserNotFoundError, UsersService
 from app.views.auth_view import forbidden_exception
 from app.views.users_view import user_conflict_exception, user_not_found_exception
@@ -16,11 +19,21 @@ service = UsersService()
 
 
 @router.post("", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserRegisterRequest) -> TokenResponse:
+def create_user(payload: UserRegisterRequest, background_tasks: BackgroundTasks) -> TokenResponse:
     try:
         registration = service.register_user(payload)
         user = registration.user
         token = create_access_token({"sub": user.id, "role": user.role.value, "email": user.email})
+        background_tasks.add_task(
+            telemetry_service.track,
+            EventEnvelope(
+                event="user.registered",
+                user_id=user.id,
+                session_id=f"srv_{user.id}",
+                context={"role": user.role.value},
+                metadata={"source": "backend-api", "environment": TELEMETRY_ENV, "app_version": APP_VERSION},
+            ),
+        )
         return TokenResponse(access_token=token)
     except UserEmailConflictError as error:
         raise user_conflict_exception() from error

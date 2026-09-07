@@ -1,3 +1,4 @@
+import { track } from '@/lib/telemetry';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
@@ -28,6 +29,7 @@ export default function RegisterPage() {
         body: JSON.stringify(formData),
       });
       setToken(response.access_token);
+      track('user.registered', { email: formData.email });
       router.push('/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la cuenta');

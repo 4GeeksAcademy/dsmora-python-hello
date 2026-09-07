@@ -1,13 +1,16 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
+from app.config import APP_VERSION, TELEMETRY_ENV
 from app.dependencies.auth import get_current_user, require_roles
 from app.models.auth import AuthAuthorizeResponse, AuthMeResponse, LoginRequest, TokenResponse
+from app.models.telemetry import EventEnvelope
 from app.models.user import UserModel, UserRole
 from app.services.auth_service import AuthProfileNotFoundError, AuthService, InvalidCredentialsError
+from app.services.telemetry_service import telemetry_service
 from app.views.auth_view import unauthorized_exception
 from app.views.profiles_view import profile_not_found_exception
 
@@ -17,11 +20,31 @@ service = AuthService()
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: Request) -> TokenResponse:
+async def login(request: Request, background_tasks: BackgroundTasks) -> TokenResponse:
     try:
         payload = await _parse_login_request(request)
-        return service.login(payload)
+        result = service.login(payload)
+        background_tasks.add_task(
+            telemetry_service.track,
+            EventEnvelope(
+                event="user.logged_in",
+                session_id=f"srv_login",
+                context={"email": payload.email},
+                metadata={"source": "backend-api", "environment": TELEMETRY_ENV, "app_version": APP_VERSION},
+            ),
+        )
+        return result
     except InvalidCredentialsError as error:
+        background_tasks.add_task(
+            telemetry_service.track,
+            EventEnvelope(
+                event="user.login_failed",
+                session_id=f"srv_login",
+                context={"email": payload.email if 'payload' in locals() else "unknown"},
+                properties={"reason": "invalid_credentials"},
+                metadata={"source": "backend-api", "environment": TELEMETRY_ENV, "app_version": APP_VERSION},
+            ),
+        )
         raise unauthorized_exception() from error
 
 

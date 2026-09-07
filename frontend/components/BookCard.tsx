@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { clearToken, getToken } from '@/lib/auth';
 import { ApiError, fetchApi } from '@/lib/api';
 import { BookResponse } from '@/types/book';
+import { track } from '@/lib/telemetry';
 
 interface BookCardProps {
   book: BookResponse;
@@ -44,6 +45,7 @@ function BookCard({ book, onReserved }: BookCardProps) {
     setIsReserving(true);
     try {
       await fetchApi(`/books/${book.id}/reserve`, { method: 'POST', token });
+      track('book.reserved', { book_id: book.id, genre: book.genre, title: book.title });
       onReserved();
       router.push('/reservations');
     } catch (err) {

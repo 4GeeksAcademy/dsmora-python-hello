@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -6,6 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { useBook } from '@/hooks/useBook';
 import { clearToken, getToken } from '@/lib/auth';
 import { ApiError, fetchApi } from '@/lib/api';
+import { track } from '@/lib/telemetry';
 
 const BookDetail = lazy(() => import('@/components/BookDetail'));
 const ErrorMessage = lazy(() => import('@/components/ErrorMessage'));
@@ -17,6 +18,13 @@ export default function BookPage() {
   const { book, isLoading, error, refetch } = useBook(bookId);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isReserving, setIsReserving] = useState(false);
+
+  // Telemetry: book.viewed
+  useEffect(() => {
+    if (book) {
+      track('book.viewed', { book_id: book.id, genre: book.genre, title: book.title });
+    }
+  }, [book]);
 
   const handleReserve = async () => {
     if (!bookId) return;
@@ -36,6 +44,7 @@ export default function BookPage() {
         method: 'POST',
         token,
       });
+      track('book.reserved', { book_id: bookId, title: book?.title });
       refetch();
       router.push('/reservations');
     } catch (err) {

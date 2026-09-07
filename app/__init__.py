@@ -8,6 +8,7 @@ from fastapi_cache.backends.inmemory import InMemoryBackend
 from app.controllers.auth_controller import router as auth_router
 from app.controllers.books_controller import router as books_router
 from app.controllers.profiles_controller import router as profiles_router
+from app.controllers.telemetry_controller import router as telemetry_router
 from app.controllers.users_controller import router as users_router
 from app.db import init_tables
 
@@ -34,4 +35,5 @@ def create_app() -> FastAPI:
     app.include_router(books_router)
     app.include_router(users_router)
     app.include_router(profiles_router)
+    app.include_router(telemetry_router)
     return app

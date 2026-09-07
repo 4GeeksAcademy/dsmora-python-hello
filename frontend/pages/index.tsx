@@ -1,9 +1,10 @@
-import { useState, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import Head from 'next/head';
 import Layout from '@/components/Layout';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useBooks } from '@/hooks/useBooks';
 import { BookFilters as BookFiltersType } from '@/types/book';
+import { track } from '@/lib/telemetry';
 
 const BookCard = lazy(() => import('@/components/BookCard'));
 const BookFilters = lazy(() => import('@/components/BookFilters'));
@@ -13,6 +14,13 @@ const EmptyState = lazy(() => import('@/components/EmptyState'));
 export default function Home() {
   const [filters, setFilters] = useState<BookFiltersType>({});
   const { books, isLoading, error, refetch } = useBooks(filters);
+
+  // Telemetry: book.listed cada vez que se actualizan los filtros
+  useEffect(() => {
+    if (!isLoading && !error && books.length > 0) {
+      track('book.listed', { count: books.length, genre: filters.genre, status: filters.status });
+    }
+  }, [books, filters, isLoading, error]);
 
   return (
     <Layout>

@@ -5,7 +5,7 @@ from tinydb import Query, TinyDB
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DB_PATH = DATA_DIR / "db.json"
-DEFAULT_TABLES = ("books", "users", "profiles", "reserved_books")
+DEFAULT_TABLES = ("books", "users", "profiles", "reserved_books", "telemetry_events")
 
 
 def get_db() -> TinyDB:

@@ -1,3 +1,4 @@
+import { track } from '@/lib/telemetry';
 import { useEffect, useState, Suspense, lazy } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
@@ -55,6 +56,11 @@ export default function ReservationsPage() {
       await fetchApi(`/books/${reservation.book_id}/reservation`, {
         method: 'DELETE',
         token,
+      });
+      track('book.released', {
+        book_id: reservation.book_id,
+        reservation_id: reservation.id,
+        title: reservation.book?.title,
       });
       setReservations((current) => current.filter(({ id }) => id !== reservation.id));
     } catch (err) {
